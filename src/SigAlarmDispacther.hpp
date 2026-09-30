@@ -98,7 +98,7 @@ public:
             timers_.push(std::move(timer));
         }
 
-        wake_worker(); // the SIGALRM will wake up the thread and thread will invoke the function
+        wake_worker(); // This is for each scedule request:)
     }
 
 private:

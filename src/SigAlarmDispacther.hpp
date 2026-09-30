@@ -1,3 +1,5 @@
+#pragma once
+
 #include <atomic>
 #include <cerrno>
 #include <chrono>
@@ -12,6 +14,7 @@
 #include <sys/time.h>
 #include <thread>
 #include <unistd.h>
+#include "thread_pool.hpp"
 
 /**
  * Author - Kazi Istiak Toriqe
@@ -23,7 +26,7 @@ class SigAlarmDispatcher {
 public:
     using Callback = std::function<void()>; // the function pointer/reference
 
-    SigAlarmDispatcher(): running_(false) {
+    SigAlarmDispatcher(): running_(false), thread_pool_(4) {
         if (pipe(pipe_fds_) != 0) {
             throw std::runtime_error("pipe failed");
         }
@@ -107,6 +110,7 @@ private:
     std::atomic<bool> running_{false};
     std::thread worker_;
     std::mutex mutex_;
+    ThreadPool thread_pool_;
 
     struct Timer {
         std::chrono::steady_clock::time_point deadline;
@@ -225,7 +229,7 @@ private:
                 timers_.pop();
             }
 
-            callback(); // invoke the scheduled function
+            thread_pool_.enqueue(std::move(callback)); // invoke the scheduled function
         }
     }
 
